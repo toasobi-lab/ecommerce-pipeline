@@ -1,5 +1,23 @@
 # E-commerce Pipeline with Kafka Microservices
 
+## 🧩 What is Kafka? (Quick Introduction)
+
+**Apache Kafka** is a distributed event streaming platform used to build real-time data pipelines and streaming applications. It is designed for high-throughput, fault-tolerant, and scalable messaging between services.
+
+**Key Kafka Concepts:**
+- **Producer:** A service that sends (publishes) messages to Kafka.
+- **Consumer:** A service that reads (subscribes to) messages from Kafka.
+- **Topic:** A named channel where messages are sent and read. Think of it as a category or feed.
+- **Partition:** Topics are split into partitions for scalability and parallelism.
+- **Broker:** A Kafka server that stores and serves messages.
+- **Offset:** The position of a message within a partition, used to keep track of what's been read.
+
+**Why use Kafka?**
+- Decouples microservices: Services communicate via events, not direct calls.
+- Handles high volumes of data with low latency.
+- Guarantees message delivery even if some services are temporarily down.
+- Enables real-time analytics and monitoring.
+
 ## 🚀 Educational Goals
 
 This project is designed to help you **learn and apply Kafka concepts** in a real-world microservices architecture. By building and running this e-commerce pipeline, you will:
@@ -30,31 +48,59 @@ The system consists of four main microservices, each responsible for a stage in 
 
 ---
 
-## 🖼️ System Architecture Diagram (ASCII)
+## 🖼️ System Architecture Diagram 
 
 ```
-+------------------+     +------------------+     +------------------+     +------------------+
-|   Order Service  |     | Payment Service  |     |Inventory Service |     | Shipment Service |
-|  (Port: 8001)    |     |  (Port: 8002)    |     |  (Port: 8003)    |     |  (Port: 8004)    |
-+------------------+     +------------------+     +------------------+     +------------------+
-         |                       |                       |                       |
-         v                       v                       v                       v
-+------------------+     +------------------+     +------------------+     +------------------+
-|   MongoDB        |     |   MongoDB        |     |   MongoDB        |     |   MongoDB        |
-+------------------+     +------------------+     +------------------+     +------------------+
-         ^                       ^                       ^                       ^
-         |                       |                       |                       |
-+------------------+     +------------------+     +------------------+     +------------------+
-|   Kafka Topics   |     |   Kafka Topics   |     |   Kafka Topics   |     |   Kafka Topics   |
-|  - order_placed  |     |  - payment_      |     |  - inventory_    |     |  - shipment_     |
-|                  |     |    processed     |     |    updated       |     |    processed     |
-+------------------+     +------------------+     +------------------+     +------------------+
-         ^                       ^                       ^                       ^
-         |                       |                       |                       |
-+------------------+     +------------------+     +------------------+     +------------------+
-|   Zookeeper      |     |   Kafdrop        |     | Mongo Express    |     |                  |
-+------------------+     +------------------+     +------------------+     +------------------+
++-------------------+         +-------------------+         +-------------------+         +-------------------+
+|   Order Service   |         | Payment Service   |         | Inventory Service |         | Shipment Service  |
+|  (Port: 8001)     |         |  (Port: 8002)     |         |  (Port: 8003)     |         |  (Port: 8004)     |
++-------------------+         +-------------------+         +-------------------+         +-------------------+
+        |                             |                              |                              |
+        | 1. POST /orders             |                              |                              |
+        |---------------------------->|                              |                              |
+        |   Kafka: order_placed       |                              |                              |
+        |---------------------------> |                              |                              |
+        |                             | 2. Consumes order_placed     |                              |
+        |                             |----------------------------->|                              |
+        |                             |   Kafka: payment_processed   |                              |
+        |                             |----------------------------->|                              |
+        |                             |                              | 3. Consumes payment_processed|
+        |                             |                              |----------------------------->|
+        |                             |                              |   Kafka: inventory_updated   |
+        |                             |                              |----------------------------->|
+        |                             |                              |                              | 4. Consumes inventory_updated
+        |                             |                              |                              |----------------------------->
+        |                             |                              |                              |   Kafka: shipment_processed
+        |                             |                              |                              |
+        v                             v                              v                              v
++-----------------------------------------------------------------------------------------------+
+|                                         Kafka Broker                                          |
+|                        (Topics: order_placed, payment_processed, inventory_updated, ...)      |
++-----------------------------------------------------------------------------------------------+
+        |                             |                              |                              |
+        v                             v                              v                              v
++-----------------------------------------------------------------------------------------------+
+|                                         MongoDB                                               |
+|   (Each service uses its own collection: orders, payments, inventory, shipments, etc.)         |
++-----------------------------------------------------------------------------------------------+
+        |                             |                              |                              |
+        v                             v                              v                              v
++-------------------+         +-------------------+         +-------------------+         +-------------------+
+|     Kafdrop       |         |  Mongo Express    |         |                   |         |                   |
+| (Kafka UI:9000)   |         | (Mongo UI:8081)   |         |                   |         |                   |
++-------------------+         +-------------------+         +-------------------+         +-------------------+
 ```
+
+---
+
+### **Service-Topic Interaction Table**
+
+| Service           | Consumes Topic         | Produces Topic           | MongoDB Collection      |
+|-------------------|-----------------------|--------------------------|------------------------|
+| Order Service     | —                     | order_placed             | orders                 |
+| Payment Service   | order_placed          | payment_processed        | payments               |
+| Inventory Service | payment_processed     | inventory_updated        | inventory, updates     |
+| Shipment Service  | inventory_updated     | shipment_processed       | shipments              |
 
 ---
 
@@ -82,7 +128,7 @@ The system consists of four main microservices, each responsible for a stage in 
 
 ### 1. Clone the repository
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/toasobi-lab/ecommerce-pipeline.git
 cd ecommerce-pipeline
 ```
 
