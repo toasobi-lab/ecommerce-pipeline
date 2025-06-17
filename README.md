@@ -51,44 +51,44 @@ The system consists of four main microservices, each responsible for a stage in 
 ## 🖼️ System Architecture Diagram 
 
 ```
-+-------------------+         +-------------------+         +-------------------+         +-------------------+
-|   Order Service   |         | Payment Service   |         | Inventory Service |         | Shipment Service  |
-|  (Port: 8001)     |         |  (Port: 8002)     |         |  (Port: 8003)     |         |  (Port: 8004)     |
-+-------------------+         +-------------------+         +-------------------+         +-------------------+
-        |                             |                              |                              |
-        | 1. POST /orders             |                              |                              |
-        |---------------------------->|                              |                              |
-        |   Kafka: order_placed       |                              |                              |
-        |---------------------------> |                              |                              |
-        |                             | 2. Consumes order_placed     |                              |
-        |                             |----------------------------->|                              |
-        |                             |   Kafka: payment_processed   |                              |
-        |                             |----------------------------->|                              |
-        |                             |                              | 3. Consumes payment_processed|
-        |                             |                              |----------------------------->|
-        |                             |                              |   Kafka: inventory_updated   |
-        |                             |                              |----------------------------->|
-        |                             |                              |                              | 4. Consumes inventory_updated
-        |                             |                              |                              |----------------------------->
-        |                             |                              |                              |   Kafka: shipment_processed
-        |                             |                              |                              |
-        v                             v                              v                              v
-+-----------------------------------------------------------------------------------------------+
-|                                         Kafka Broker                                          |
-|                        (Topics: order_placed, payment_processed, inventory_updated, ...)      |
-+-----------------------------------------------------------------------------------------------+
-        |                             |                              |                              |
-        v                             v                              v                              v
-+-----------------------------------------------------------------------------------------------+
-|                                         MongoDB                                               |
-|   (Each service uses its own collection: orders, payments, inventory, shipments, etc.)         |
-+-----------------------------------------------------------------------------------------------+
-        |                             |                              |                              |
-        v                             v                              v                              v
-+-------------------+         +-------------------+         +-------------------+         +-------------------+
-|     Kafdrop       |         |  Mongo Express    |         |                   |         |                   |
-| (Kafka UI:9000)   |         | (Mongo UI:8081)   |         |                   |         |                   |
-+-------------------+         +-------------------+         +-------------------+         +-------------------+
++-------------------+     +-------------------+     +-------------------+     +-------------------+
+|   Order Service   |     | Payment Service   |     | Inventory Service |     | Shipment Service  |
+|  (Port: 8001)     |     |  (Port: 8002)     |     |  (Port: 8003)     |     |  (Port: 8004)     |
++-------------------+     +-------------------+     +-------------------+     +-------------------+
+        |                        |                        |                        |
+        | 1. POST /orders        |                        |                        |
+        |----------------------->|                        |                        |
+        |   Kafka: order_placed  |                        |                        |
+        |----------------------->|                        |                        |
+        |                        | 2. Consumes order_placed|                       |
+        |                        |----------------------->|                        |
+        |                        |   Kafka: payment_processed                     |
+        |                        |----------------------->|                        |
+        |                        |                        | 3. Consumes payment_processed
+        |                        |                        |---------------------->|
+        |                        |                        |   Kafka: inventory_updated
+        |                        |                        |---------------------->|
+        |                        |                        |                        | 4. Consumes inventory_updated
+        |                        |                        |                        |---------------------->
+        |                        |                        |                        |   Kafka: shipment_processed
+        v                        v                        v                        v
++-------------------------------------------------------------------------------+
+|                                 Kafka Broker                                  |
+|                (Topics: order_placed, payment_processed, inventory_updated)   |
++-------------------------------------------------------------------------------+
+        |                        |                        |                        |
+        v                        v                        v                        v
++-------------------------------------------------------------------------------+
+|                                   MongoDB                                     |
+|   (Each service uses its own collection: orders, payments, inventory, etc.)   |
++-------------------------------------------------------------------------------+
+
+  [ Kafdrop (Kafka UI:9000) ]         [ Mongo Express (Mongo UI:8081) ]
+         |                                         |
+         +-------------------+   +-----------------+
+                             |   |
+                             v   v
+                        (Read-only, for human inspection)
 ```
 
 ---
